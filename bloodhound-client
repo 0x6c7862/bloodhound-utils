@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+declare -r version='1.0.0'
+declare -r bloodhound_version='1.2'
+
+bail () {
+	declare -r message="${@}"
+
+	# Print message to stderr and die with error
+	printf 'bloodhound-client: %s\n' "${message[@]}" 1>&2
+	exit 1
+}
+
+halp () {
+	declare ret="${1}"
+	shift 1
+	declare message="${@}"
+
+	cat 1>&2 <<EOF
+${message[@]}
+Usage: bloodhound-client [OPTIONS...]
+	-d	Path to BloodHound installation directory
+	-h	Display this help message.
+	-v	Display version information and exit.
+EOF
+	exit "${ret}"
+}
+
+version () {
+	cat <<EOF
+bloodhound-client ${version} (https://github.com/0x6c7862/bloodhound-utils)
+
+Written by @lxb <https://github.com/0x6c7862>.
+BloodHound is written by Veris Group's Adaptive Threat Division <https://github.com/adaptivethreat/BloodHound>.
+BloodHound is GPLv3 software (See <https://github.com/adaptivethreat/BloodHound/blob/master/LICENSE.md> for more information).
+EOF
+}
+
+download_bloodhound () {
+	# Determine which release to download
+	declare -r os="${1}"
+	declare -r url="https://github.com/adaptivethreat/BloodHound/releases/download/${bloodhound_version}/BloodHound-${os}-x64.zip"
+	declare -r tmp="$(mktemp -d)"
+
+	# Download and unzip
+	printf '[+] Downloading BloodHound to ./BloodHound-%s-x64\n' "${os}"
+	curl -s -L -o "${tmp}/BloodHound-${os}-x64.zip" "${url}"
+	unzip "${tmp}/BloodHound-${os}-x64.zip" &>/dev/null
+
+	# Cleanup
+	rm -rf "${tmp}"
+}
+
+main () {
+	# Check options
+	while getopts "d:hv" opt; do
+		case "${opt}" in
+		d)
+			bloodhound_directory="${OPTARG}"
+			;;
+		h)
+			halp 0 "$(version)"
+			;;
+		v)
+			version
+			exit 0
+			;;
+		\?)
+			halp 1 "$(version)"
+		esac
+	done
+	shift $(( OPTIND-1 ))
+
+	# Check OS
+	case "${OSTYPE}" in
+	linux-gnu)
+		declare -r os="linux"
+		;;
+	darwin*)
+		declare -r os="darwin"
+		;;
+	*)
+		bail "unsupported operating system"
+		;;
+	esac
+
+	# Ensure BloodHound exists
+	if [[ -z "${bloodhound_directory}" ]]; then
+		# Check if BloodHound is already present in the CWD or reasonable system
+		# paths
+		# NOTE: The way BloodHound is currently distributed it doesn't make
+		#       sense to check PATH for the BloodHound binary, since it sets an
+		#       RPATH to `.`. It's almost certainly in its own directory
+		bloodhound_directory=""
+		if [[ -x "$(echo "./BloodHound-${os}-x64/BloodHound"*)" ]]; then
+			bloodhound_directory="./BloodHound-${os}-x64"
+		elif [[ -x "$(echo "/opt/BloodHound-${os}-x64/BloodHound"*)" ]]; then
+			bloodhound_directory="/opt/BloodHound-${os}-x64"
+		elif [[ -x "$(echo "/usr/local/BloodHound-${os}-x64/BloodHound"*)" ]]; then
+			bloodhound_directory="/usr/local/BloodHound-${os}-x64"
+		fi
+
+		# If not present, download it to the CWD
+		if [[ -z "${bloodhound_directory}" ]]; then
+			download_bloodhound "${os}"
+			bloodhound_directory="./BloodHound-${os}-x64"
+		fi
+	fi
+
+	# Launch BloodHound
+	printf '[+] Launching BloodHound\n'
+	pushd "${bloodhound_directory}" &>/dev/null
+	case "${OSTYPE}" in
+	linux-gnu)
+		./BloodHound
+		;;
+	darwin*)
+		open BloodHound.app
+		;;
+	esac
+	popd &>/dev/null
+}
+
+main "${@}"

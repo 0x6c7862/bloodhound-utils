@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+declare -r version='1.0.0'
+declare -r bloodhound_version='1.2'
+declare -r neo4j_version='3.1'
+
+bail () {
+	declare -r message="${@}"
+
+	# Print message to stderr and die with error
+	printf 'bloodhound-server: %s\n' "${message[@]}" 1>&2
+	exit 1
+}
+
+halp () {
+	declare ret="${1}"
+	shift 1
+	declare message="${@}"
+
+	cat 1>&2 <<EOF
+${message[@]}
+Usage: bloodhound-server [OPTIONS...] [database]
+	-h	Display this help message.
+	-v	Display version information and exit.
+
+	[database]	The BloodHound neo4j database directory. Will be created if
+			not already present
+EOF
+	exit "${ret}"
+}
+
+version () {
+	cat <<EOF
+bloodhound-server ${version} (https://github.com/0x6c7862/bloodhound-utils)
+
+Written by @lxb <https://github.com/0x6c7862>.
+BloodHound is written by Veris Group's Adaptive Threat Division <https://github.com/adaptivethreat/BloodHound>.
+BloodHound is GPLv3 software (See <https://github.com/adaptivethreat/BloodHound/blob/master/LICENSE.md> for more information).
+EOF
+}
+
+download_database () {
+	# Create new working directory
+	declare -r tmp="$(mktemp -d)"
+	pushd "${tmp}" &>/dev/null
+
+	# Pull down the latest example database via a sparse checkout of the
+	# BloodHound repository
+	printf '[+] Downloading BloodHound database\n'
+	git init &>/dev/null
+	git remote add origin https://github.com/adaptivethreat/BloodHound &>/dev/null
+	echo BloodHoundExampleDB.graphdb >.git/info/sparse-checkout
+	git -c core.sparseCheckout=true pull --depth=1 origin "tags/${bloodhound_version}" &>/dev/null
+
+	# Create new BloodHound database
+	popd &>/dev/null
+	mkdir -p "${database}/.."
+	# NOTE: This appears destructive, but we shouldn't reach this function if
+	#       the directory previously existed
+	rm -rf "${database}"
+	mv "${tmp}/BloodHoundExampleDB.graphdb" "${database}"
+
+	# Cleanup
+	rm -rf "${tmp}"
+}
+
+main () {
+	# Check options
+	while getopts "hv" opt; do
+		case "${opt}" in
+		h)
+			halp 0 "$(version)"
+			;;
+		v)
+			version
+			exit 0
+			;;
+		\?)
+			halp 1 "$(version)"
+		esac
+	done
+	shift $(( OPTIND-1 ))
+
+	# Check that Docker is available by pulling down neo4j (since we need it
+	# later anyway)
+	docker images | grep -E "^neo4j[[:space:]]+${neo4j_version}" &>/dev/null
+	declare -a rets=(${PIPESTATUS[@]})
+	[[ "${rets[0]}" != "0" ]] && bail "docker failed. Is Docker installed?"
+	if [[ "${rets[1]}" != "0" ]]; then
+		# Start pulling neo4j down in the background
+		printf '[+] Downloading neo4j\n'
+		docker pull "neo4j:${neo4j_version}" & &>/dev/null
+	fi
+
+	# Check database
+	declare -r database="${1}"
+	if [[ -z "${database}" ]]; then
+		# Finish potentially pulling down neo4j and die
+		wait
+		halp 1 "bloodhound-server: missing database"
+	fi
+
+	# Ensure database exists
+	if [[ -d "${database}" ]]; then
+		if [[ ! -f "${database}/neostore.id" ]]; then
+			# Finish potentially pulling down neo4j and die
+			wait
+			bail 1 "unknown database. Is ${database} a valid BloodHound database?"
+		fi
+	else
+		download_database "${database}" &
+	fi
+
+	# Join on downloads
+	wait &>/dev/null
+
+	# Start the container
+	printf '[+] Launching neo4j\n'
+	# FIXME: This should have auth
+	docker run --rm -it \
+		--env=NEO4J_AUTH=none \
+		--publish=7474:7474 --publish=7687:7687 \
+		-v "$(readlink -e "${database}"):/var/lib/neo4j/data/databases/graph.db" \
+		"neo4j:${neo4j_version}"
+}
+
+main "${@}"
