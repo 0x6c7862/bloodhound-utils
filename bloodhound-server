@@ -109,6 +109,19 @@ main () {
 	else
 		download_database "${database}" &
 	fi
+	case "${OSTYPE}" in
+	linux-gnu)
+		declare -r database_path="$(readlink -e "${database}")"
+		;;
+	darwin*)
+		# Fallback to probably-fine-but-less-than-ideal value on OSX due to
+		# lack of readlink flags
+		declare -r database_path="${PWD}/${database}"
+		;;
+	*)
+		bail "unsupported operating system"
+		;;
+	esac
 
 	# Join on downloads
 	wait &>/dev/null
@@ -119,7 +132,7 @@ main () {
 	docker run --rm -it \
 		--env=NEO4J_AUTH=none \
 		--publish=7474:7474 --publish=7687:7687 \
-		-v "$(readlink -e "${database}"):/var/lib/neo4j/data/databases/graph.db" \
+		-v "${database_path}:/var/lib/neo4j/data/databases/graph.db" \
 		"neo4j:${neo4j_version}"
 }
 
