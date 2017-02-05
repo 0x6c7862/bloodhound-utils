@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 declare -r version='1.0.0'
-declare -r bloodhound_version='1.2'
+declare -r bloodhound_version='1.2.1'
 
 bail () {
 	declare -r message="${@}"
