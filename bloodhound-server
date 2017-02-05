@@ -109,6 +109,9 @@ main () {
 	else
 		download_database "${database}" &
 	fi
+
+	# Join on downloads
+	wait &>/dev/null
 	case "${OSTYPE}" in
 	linux-gnu)
 		declare -r database_path="$(readlink -e "${database}")"
@@ -122,9 +125,6 @@ main () {
 		bail "unsupported operating system"
 		;;
 	esac
-
-	# Join on downloads
-	wait &>/dev/null
 
 	# Start the container
 	printf '[+] Launching neo4j\n'
