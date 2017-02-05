@@ -30,15 +30,15 @@ version () {
 bloodhound-client ${version} (https://github.com/0x6c7862/bloodhound-utils)
 
 Written by @lxb <https://github.com/0x6c7862>.
-BloodHound is written by Veris Group's Adaptive Threat Division <https://github.com/adaptivethreat/BloodHound>.
-BloodHound is GPLv3 software (See <https://github.com/adaptivethreat/BloodHound/blob/master/LICENSE.md> for more information).
+BloodHound is written by Veris Group's Adaptive Threat Division <https://github.com/BloodHoundAD/BloodHound>.
+BloodHound is GPLv3 software (See <https://github.com/BloodHoundAD/BloodHound/blob/master/LICENSE.md> for more information).
 EOF
 }
 
 download_bloodhound () {
 	# Determine which release to download
 	declare -r os="${1}"
-	declare -r url="https://github.com/adaptivethreat/BloodHound/releases/download/${bloodhound_version}/BloodHound-${os}-x64.zip"
+	declare -r url="https://github.com/BloodHoundAD/BloodHound/releases/download/${bloodhound_version}/BloodHound-${os}-x64.zip"
 	declare -r tmp="$(mktemp -d)"
 
 	# Download and unzip

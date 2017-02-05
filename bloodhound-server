@@ -33,8 +33,8 @@ version () {
 bloodhound-server ${version} (https://github.com/0x6c7862/bloodhound-utils)
 
 Written by @lxb <https://github.com/0x6c7862>.
-BloodHound is written by Veris Group's Adaptive Threat Division <https://github.com/adaptivethreat/BloodHound>.
-BloodHound is GPLv3 software (See <https://github.com/adaptivethreat/BloodHound/blob/master/LICENSE.md> for more information).
+BloodHound is written by Veris Group's Adaptive Threat Division <https://github.com/BloodHoundAD/BloodHound>.
+BloodHound is GPLv3 software (See <https://github.com/BloodHoundAD/BloodHound/blob/master/LICENSE.md> for more information).
 EOF
 }
 
@@ -47,7 +47,7 @@ download_database () {
 	# BloodHound repository
 	printf '[+] Downloading BloodHound database\n'
 	git init &>/dev/null
-	git remote add origin https://github.com/adaptivethreat/BloodHound &>/dev/null
+	git remote add origin https://github.com/BloodHoundAD/BloodHound &>/dev/null
 	echo BloodHoundExampleDB.graphdb >.git/info/sparse-checkout
 	git -c core.sparseCheckout=true pull --depth=1 origin "tags/${bloodhound_version}" &>/dev/null
 

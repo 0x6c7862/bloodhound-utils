@@ -1,6 +1,6 @@
 # bloodhound-utils
 
-Two wrapper scripts around getting a [BloodHound](https://github.com/adaptivethreat/BloodHound) database and client up and running
+Two wrapper scripts around getting a [BloodHound](https://github.com/BloodHoundAD/BloodHound) database and client up and running
 
 
 ## Usage
