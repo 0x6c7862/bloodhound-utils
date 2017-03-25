@@ -82,13 +82,13 @@ main () {
 
 	# Check that Docker is available by pulling down neo4j (since we need it
 	# later anyway)
-	docker images | grep -E "^neo4j[[:space:]]+${neo4j_version}" &>/dev/null
+	docker image ls | grep -E "^neo4j[[:space:]]+${neo4j_version}" &>/dev/null
 	declare -a rets=(${PIPESTATUS[@]})
 	[[ "${rets[0]}" != "0" ]] && bail "docker failed. Is Docker installed?"
 	if [[ "${rets[1]}" != "0" ]]; then
 		# Start pulling neo4j down in the background
 		printf '[+] Downloading neo4j\n'
-		docker pull "neo4j:${neo4j_version}" & &>/dev/null
+		docker image pull "neo4j:${neo4j_version}" & &>/dev/null
 	fi
 
 	# Check database
@@ -129,7 +129,7 @@ main () {
 	# Start the container
 	printf '[+] Launching neo4j\n'
 	# FIXME: This should have auth
-	docker run --rm -it \
+	docker container run --rm -it \
 		--env=NEO4J_AUTH=none \
 		--publish=7474:7474 --publish=7687:7687 \
 		-v "${database_path}:/var/lib/neo4j/data/databases/graph.db" \
