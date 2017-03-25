@@ -1,6 +1,7 @@
 # bloodhound-utils
 
-Two wrapper scripts around getting a [BloodHound](https://github.com/BloodHoundAD/BloodHound) database and client up and running
+Two wrapper scripts around getting a [BloodHound](https://github.com/BloodHoundAD/BloodHound) database and client up and running.
+
 
 
 ## Usage
@@ -8,11 +9,12 @@ Two wrapper scripts around getting a [BloodHound](https://github.com/BloodHoundA
 ### Server
 
 ```bash
-$ bloodhound-server foo.graphdb
+$ bloodhound-server -p 'Pa$$w0rd' foo.graphdb
 ```
 
 * If `foo.graphdb` does not exist a new database will be created.
-* The [neo4j](https://hub.docker.com/_/neo4j/) Docker image will be launched (interactively; use CTRL-C to exit)
+* The [neo4j](https://hub.docker.com/_/neo4j/) Docker image will be launched (interactively; use CTRL-C to exit).
+* The password (`-p`) parameter is optional. The default value is `BloodHound`.
 
 ### Client
 
@@ -20,8 +22,8 @@ $ bloodhound-server foo.graphdb
 $ bloodhound-client
 ```
 
-* If there isn't a BloodHound release in `.`, `/opt` or `/usr/local` then it will be downloaded
-* The BloodHound client will be launched
+* If there isn't a BloodHound release in `.`, `/opt` or `/usr/local` then it will be downloaded.
+* The BloodHound client will be launched.
 
 
 ## Installation
