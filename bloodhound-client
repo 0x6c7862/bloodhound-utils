@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 declare -r version='2.0.0'
 declare -r bloodhound_version='1.2.1'
+export LC_ALL='C'
 
 bail () {
 	declare -r message="${@}"
