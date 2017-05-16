@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 declare -r version='2.0.0'
-declare -r bloodhound_version='1.2.1'
-declare -r neo4j_version='3.2'
+declare -r bloodhound_version="${BLOODHOUND_VERSION-1.2.1}"
+declare -r neo4j_version="${NEO4J_VERSION-3.2}"
 export LC_ALL='C'
 
 bail () {
@@ -51,6 +51,10 @@ download_database () {
 	git remote add origin https://github.com/BloodHoundAD/BloodHound &>/dev/null
 	echo BloodHoundExampleDB.graphdb >.git/info/sparse-checkout
 	git -c core.sparseCheckout=true pull --depth=1 origin "tags/${bloodhound_version}" &>/dev/null
+	if [[ "${?}" != 0 ]]; then
+		printf '[-] Failed downloading BloodHound database\n'
+		return
+	fi
 
 	# Remove credentials
 	rm -rf BloodHoundExampleDB.graphdb/data/dbms/auth
@@ -58,10 +62,19 @@ download_database () {
 	# Create new BloodHound database
 	popd &>/dev/null
 	mkdir -p "${database}/.."
+	if [[ "${?}" != 0 ]]; then
+		printf '[-] Failed creating BloodHound database\n'
+		return
+	fi
+
 	# NOTE: This appears destructive, but we shouldn't reach this function if
 	#       the directory previously existed
 	rm -rf "${database}"
 	mv "${tmp}/BloodHoundExampleDB.graphdb" "${database}"
+	if [[ "${?}" != 0 ]]; then
+		printf '[-] Failed creating BloodHound database\n'
+		return
+	fi
 
 	# Cleanup
 	rm -rf "${tmp}"
@@ -98,12 +111,12 @@ main () {
 		docker image pull "neo4j:${neo4j_version}" & &>/dev/null
 	fi
 
-	# Check database
+	# Check database argument
 	declare -r database="${1}"
 	if [[ -z "${database}" ]]; then
 		# Finish potentially pulling down neo4j and die
 		wait
-		halp 1 "bloodhound-server: missing database"
+		halp 1 "bloodhound-server: missing database argument"
 	fi
 
 	# Ensure database exists
@@ -117,8 +130,12 @@ main () {
 		download_database "${database}" &
 	fi
 
-	# Join on downloads
+	# Join on downloads and double check database exists
 	wait &>/dev/null
+	if [[ ! -d "${database}" ]]; then
+		exit 1
+	fi
+
 	case "${OSTYPE}" in
 	linux-gnu)
 		declare -r database_path="$(readlink -e "${database}")"
