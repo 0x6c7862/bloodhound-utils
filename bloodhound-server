@@ -112,6 +112,8 @@ main () {
 	# Check options
 	while getopts "hp:v" opt; do
 		case "${opt}" in
+		f)
+			fresh=1
 		h)
 			halp 0 "$(version)"
 			;;
@@ -187,13 +189,15 @@ main () {
 		-v "${database_path}:/var/lib/neo4j/data/databases/graph.db" \
 		"neo4j:${neo4j_version}")"
 
+	# Wait for remote API if it's needed
+	if [[ ! -f "${database_path}/data/dbms/auth" ]] || [[ "${delete}" ]]; then
+		until docker container logs "${container}" | grep 'Remote interface available' &>/dev/null; do :; done
+	fi
+
 	# Change the password
 	if [[ ! -f "${database_path}/data/dbms/auth" ]]; then
-		# Wait for remote API
-		printf '[+] Changing password\n'
-		until docker container logs "${container}" | grep 'Remote interface available' &>/dev/null; do :; done
-
 		# Set to an intermediate password to allow setting password as "neo4j"
+		printf '[+] Changing password\n'
 		declare -r rand="$(cat /dev/urandom | tr -dc 'a-zA-Z' | fold -w 8 | head -n 1)"
 		curl -s -H "Content-Type: application/json" \
 			-d "{\"password\":\"${rand}\"}" \
@@ -207,6 +211,15 @@ main () {
 			http://localhost:7474/user/neo4j/password
 	else
 		printf '[-] Unable to set password\n'
+	fi
+
+	# Use a fresh database
+	if [[ "${fresh}" ]]; then
+		printf '[+] Creating fresh database\n'
+		curl -s -H "Content-Type: application/json" \
+			-d "{\"statements\":[{\"statement\":\"MATCH (n) DETACH DELETE n\"}]}" \
+			-u "neo4j:${password:-BloodHound}" \
+			http://localhost:7474/db/data/transaction/commit
 	fi
 
 	# Attach to the container
