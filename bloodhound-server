@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 declare -r version='2.0.0'
 declare -r bloodhound_version="${BLOODHOUND_VERSION-1.3}"
-declare -r neo4j_version="${NEO4J_VERSION-3.2}"
+declare -r neo4j_version="3.1"
 export LC_ALL='C'
 
 bail () {
@@ -37,6 +37,34 @@ Written by @lxb <https://github.com/0x6c7862>.
 BloodHound is written by Veris Group's Adaptive Threat Division <https://github.com/BloodHoundAD/BloodHound>.
 BloodHound is GPLv3 software (See <https://github.com/BloodHoundAD/BloodHound/blob/master/LICENSE.md> for more information).
 EOF
+}
+
+create_config () {
+	# Create new config directory
+	declare -r tmp="$(mktemp -d)"
+	mkdir "${tmp}/conf"
+
+	# Config ripped from `neo4j:3.1 dump-config` with the addition of
+	# `default_listen_address`
+	cat >"${tmp}/conf/neo4j.conf" <<'EOF'
+dbms.directories.import=import
+dbms.connectors.default_listen_address=0.0.0.0
+dbms.connector.bolt.enabled=true
+dbms.connector.http.enabled=true
+dbms.connector.https.enabled=true
+dbms.jvm.additional=-XX:+UseG1GC
+dbms.jvm.additional=-XX:-OmitStackTraceInFastThrow
+dbms.jvm.additional=-XX:+AlwaysPreTouch
+dbms.jvm.additional=-XX:+UnlockExperimentalVMOptions
+dbms.jvm.additional=-XX:+TrustFinalNonStaticFields
+dbms.jvm.additional=-XX:+DisableExplicitGC
+dbms.jvm.additional=-Djdk.tls.ephemeralDHKeySize=2048
+dbms.windows_service_name=neo4j
+dbms.jvm.additional=-Dunsupported.dbms.udc.source=tarball
+EOF
+
+	# Return tmpdir
+	echo "${tmp}"
 }
 
 download_database () {
@@ -152,8 +180,10 @@ main () {
 
 	# Start the container
 	printf '[+] Launching neo4j\n'
+	declare -r container_config="$(create_config)"
 	declare -r container="$(docker container run -d \
-		--publish=7474:7474 --publish=7687:7687 \
+		--publish=7473:7473 --publish=7474:7474 --publish=7687:7687 \
+		-v "${container_config}/conf:/conf" \
 		-v "${database_path}:/var/lib/neo4j/data/databases/graph.db" \
 		"neo4j:${neo4j_version}")"
 
@@ -182,7 +212,10 @@ main () {
 	# Attach to the container
 	docker container logs "${container}"
 	docker container attach "${container}"
+
+	# Cleanup
 	docker container rm "${container}" >/dev/null
+	rm -r "${container_config}"
 }
 
 main "${@}"
