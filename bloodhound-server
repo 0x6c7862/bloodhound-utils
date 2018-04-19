@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 declare -r version='2.0.0'
 declare -r bloodhound_version="${BLOODHOUND_VERSION-1.4}"
-declare -r neo4j_version="3.1"
+declare -r neo4j_version="${NEO4J_VERSION-3.1}"
 export LC_ALL='C'
 
 bail () {
@@ -19,12 +19,16 @@ halp () {
 
 	cat 1>&2 <<EOF
 ${message[@]}
-Usage: bloodhound-server [OPTIONS...] [database]
+Usage: [ENV...] bloodhound-server [OPTIONS...] [database]
+	-p	Set database password (default is "BloodHound")
 	-h	Display this help message.
 	-v	Display version information and exit.
 
 	[database]	The BloodHound neo4j database directory. Will be created if
 			not already present
+
+	\$BLOODHOUND_VERSION	Set the version of BloodHound to use
+	\$NEO4J_VERSION		Set the version of Neo4j to use
 EOF
 	exit "${ret}"
 }
