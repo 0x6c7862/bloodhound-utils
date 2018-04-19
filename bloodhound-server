@@ -132,6 +132,12 @@ main () {
 	done
 	shift $(( OPTIND-1 ))
 
+	# Check database argument
+	declare -r database="${1}"
+	if [[ -z "${database}" ]]; then
+		halp 1 "bloodhound-server: missing database argument"
+	fi
+
 	# Check that Docker is available by pulling down neo4j (since we need it
 	# later anyway)
 	docker image ls | grep -E "^neo4j[[:space:]]+${neo4j_version}" &>/dev/null
@@ -141,14 +147,6 @@ main () {
 		# Start pulling neo4j down in the background
 		printf '[+] Downloading neo4j\n'
 		docker image pull "neo4j:${neo4j_version}" & &>/dev/null
-	fi
-
-	# Check database argument
-	declare -r database="${1}"
-	if [[ -z "${database}" ]]; then
-		# Finish potentially pulling down neo4j and die
-		wait
-		halp 1 "bloodhound-server: missing database argument"
 	fi
 
 	# Ensure database exists
