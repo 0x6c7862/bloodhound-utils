@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 declare -r version='2.0.0'
-declare -r bloodhound_version="${BLOODHOUND_VERSION-2.0.3.1}"
+declare -r bloodhound_version="${BLOODHOUND_VERSION-2.1.0}"
 export LC_ALL='C'
 
 bail () {
